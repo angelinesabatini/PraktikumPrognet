@@ -50,7 +50,7 @@
 <br>
 <div class="">
 <!--UPLOAD PAYMENT-->
-@if($pay->status=='waiting' || $pay->status=='valid' || $pay->status=='sudah_transfer')
+@if($pay->status=='waiting' || $pay->status=='valid' || $pay->status=='sudah_transfer' )
 @if($pay->status !='review')
 <div class="toolbar hidden-print">
         <div class="text-right">
@@ -201,7 +201,9 @@
     @if($pay->status=='sampai_tujuan')
     @if($pay->status!=='reviewed')
 	<!-- the comment box -->
-	<form action="/uploadcomment/{{Auth::user()->id}}/{{$pay->id_produk}}" method="post" attribute enctype="multipart/form-data">
+    @foreach($pay->detailcheckoutkecheckout as $pa)
+	    <form action="/uploadcomment/{{$pay->id}}/{{$pa->produkkedetailcheckout->id}}" method="post" attribute enctype="multipart/form-data">
+    @endforeach
 	@csrf
 	<div class="container">
         <h4>Thank you for your purchase, Please leave a review</h4>
