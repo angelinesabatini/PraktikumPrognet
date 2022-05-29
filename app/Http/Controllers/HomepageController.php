@@ -345,9 +345,7 @@ class HomepageController extends Controller
 
     //upload comment di page payment
     public function uploadcomment(Request $request, $id, $idd){
-        $user = User::where('id', $id)->first();
-
-    
+        $user = User::where('id', Auth::user()->id)->first();
 
         $uploadcomment = ProdukReview::create([
             'id_user' => Auth::id(),
@@ -356,14 +354,15 @@ class HomepageController extends Controller
             'content' => $request->comment
         ]);
 
-        $produk = Checkout::where('id', $idd)
+        $produk = Checkout::where('id', $id)
         ->update([
             'status' => "reviewed"
         ]);
 
+        //dd($user);
 
 
-        return redirect()->action([HomepageController::class,'paymentpage'], ['id'=> $user->id]);
+        return redirect()->action([HomepageController::class,'paymentpage'], ['id'=> Auth::user()->id]);
         //return redirect('/paymentpage/{id}');
     }
 
@@ -390,6 +389,7 @@ class HomepageController extends Controller
             'id_produk' => $id,
             'content' => $request->review
         ]);
+        
 
         return redirect()->action([HomepageController::class,'paymentpage'], ['id'=> $comment->id]);
         //return redirect('/dashboarduser');
