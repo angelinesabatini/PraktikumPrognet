@@ -31,90 +31,14 @@ class HomepageController extends Controller
 
     //get homepage
     public function gethomepage(){
-        $itemuser = $request->user();
-        
-        $itemstatuscount = DB::table('notifications')
-        ->select('id','notifications.id_user', 'notifications.id_ulasan_checkout', 'notifications.jenis')
-        ->where('notifications.id_user', $itemuser->id)
-        ->where('notifications.read', "belum")
-        ->count();
-        $itemstatus = DB::table('notifications')
-        ->select('id','notifications.id_user', 'notifications.id_ulasan_checkout', 'notifications.jenis')
-        ->where('notifications.id_user', $itemuser->id)
-        ->where('notifications.read', "belum")
-        ->get();
-
-        $itemulasan = DB::table('notifications')
-        ->select('id','notifications.id_user', 'notifications.id_ulasan_checkout', 'notifications.jenis')
-        ->where('notifications.id_user', $itemuser->id)
-        ->where('notifications.jenis', "ulasan")
-        ->where('notifications.read', "belum")
-        ->count();
-        $itemcekot= DB::table('notifications')
-        ->select('id','notifications.id_user', 'notifications.id_ulasan_checkout', 'notifications.jenis')
-        ->where('notifications.id_user', $itemuser->id)
-        ->where('notifications.jenis', "checkout")
-        ->where('notifications.read', "belum")
-        ->count();
-
-        if ($itemstatuscount > '0') {
-            if($itemstatuscount == '1'){
-                if($itemstatus[0]->jenis == 'checkout'){
-                notify()->success('Hi status transaksimu dengan id : '.$itemstatus[0]->id_ulasan_checkout.', sudah diperbarui!!!');
-                $itemupdate = DB::statement('UPDATE notifications SET `read` = "sudah" WHERE notifications.id = '.$itemstatus[0]->id.';');
-                $iteminsert = DB::statement('UPDATE notifications SET pesan = ("Hi status transaksimu dengan id : ".$itemstatus[0]->id_ulasan_checkout.", sudah diperbarui!!!")'); 
-
-                // $itemdelete = DB::delete('DELETE FROM notifications WHERE notifications.id = '.$itemstatus[0]->id.';');
-                }
-                elseif($itemstatus[0]->jenis == 'ulasan'){
-                notify()->success('Hi reviewmu dengan id : '.$itemstatus[0]->id_ulasan_checkout.', sudah dibalas!!!');
-                $itemupdate = DB::statement('UPDATE notifications SET `read` = "sudah" WHERE notifications.id = '.$itemstatus[0]->id.';');
-                $iteminsert = DB::statement('UPDATE notifications SET pesan = ("Hi reviewmu dengan id : ".$itemstatus[0]->id_ulasan_checkout.", sudah dibalas!!!")'); 
-
-                // $itemdelete = DB::delete('DELETE FROM notifications WHERE notifications.id = '.$itemstatus[0]->id.';');
-                }
-            }
-            elseif($itemstatuscount > '1'){
-                foreach ($itemstatus as $ya){
-                    if($itemcekot > 0 and $itemulasan > 0){
-                        notify()->success('Hi beberapa status transaksimu sudah diperbarui dan reviewmu sudah dibalas oleh admin, terimakasih!!!');
-                        foreach ($itemstatus as $y){ 
-                            $itemupdate = DB::statement('UPDATE notifications SET `read` = "sudah" WHERE notifications.id = '.$y->id.';');
-                            $iteminsert = DB::statement('UPDATE notifications SET pesan = ("Hi beberapa status transaksimu sudah diperbarui dan reviewmu sudah dibalas oleh admin, terimakasih!!!")'); 
-
-                            // $itemdelete = DB::delete('DELETE FROM notifications WHERE notifications.id = '.$y->id.';');
-                        }
-                    }
-                    elseif($ya->jenis == "checkout"){
-                        notify()->success('Hi beberapa status transaksimu sudah diperbarui terimakasih!!!');
-                        foreach ($itemstatus as $y){ 
-                            $itemupdate = DB::statement('UPDATE notifications SET `read` = "sudah" WHERE notifications.id = '.$y->id.';');
-                            $iteminsert = DB::statement('UPDATE notifications SET pesan = ("Hi beberapa status transaksimu sudah diperbarui terimakasih!!!")'); 
-
-                            // $itemdelete = DB::delete('DELETE FROM notifications WHERE notifications.id = '.$y->id.';');
-                        }
-                    }
-                    elseif($ya->jenis == "ulasan"){
-                        notify()->success('Hi beberapa reviewmu sudah dibalas terimakasih!!!');
-                        foreach ($itemstatus as $y){ 
-                            $itemupdate = DB::statement('UPDATE notifications SET `read` = "sudah" WHERE notifications.id = '.$y->id.';');
-                            $iteminsert = DB::statement('UPDATE notifications SET pesan = ("Hi beberapa reviewmu sudah dibalas terimakasih!!!")'); 
-
-                            // $itemdelete = DB::delete('DELETE FROM notifications WHERE notifications.id = '.$y->id.';');
-                        }
-                    }
-                    
-                }
-            }
-        }
-
         $produk = Produk::all();
         $kategori = Kategori::all();
         $gambarproduk = ProdukImage::all();
         $kategoriproduk = product_kategori_detail::all();
+
         //dd($produk);
-        return view('homepage/index', compact('produk', 'kategori', 'gambarproduk', 'kategoriproduk', 'itemstatus'));
-      }
+        return view('homepage/index', compact('produk', 'kategori', 'gambarproduk', 'kategoriproduk'));
+    }
 
     //detail produk pgae
     public function detailproduk($id){
@@ -123,7 +47,7 @@ class HomepageController extends Controller
         $comment = ProdukReview::where('id_produk', $id)->get();
         $star = ProdukReview::where('id_produk', $id)->avg('star');
 
-        //dd($star);
+        //dd($id);
         
         return view('homepage.detailproduk', compact('produk2', 'comment', 'star'));
     }
@@ -242,8 +166,6 @@ class HomepageController extends Controller
 
         }
 
-
-
         //dd($timeout);
         return redirect()->action([HomepageController::class,'paymentpage'], ['id'=> Auth::user()->id]);
     }
@@ -345,9 +267,7 @@ class HomepageController extends Controller
 
     //upload comment di page payment
     public function uploadcomment(Request $request, $id, $idd){
-        $user = User::where('id', $id)->first();
-
-    
+        $user = User::where('id', Auth::user()->id)->first();
 
         $uploadcomment = ProdukReview::create([
             'id_user' => Auth::id(),
@@ -356,14 +276,15 @@ class HomepageController extends Controller
             'content' => $request->comment
         ]);
 
-        $produk = Checkout::where('id', $idd)
+        $produk = Checkout::where('id', $id)
         ->update([
             'status' => "reviewed"
         ]);
 
+        //dd($user);
 
 
-        return redirect()->action([HomepageController::class,'paymentpage'], ['id'=> $user->id]);
+        return redirect()->action([HomepageController::class,'paymentpage'], ['id'=> Auth::user()->id]);
         //return redirect('/paymentpage/{id}');
     }
 
@@ -390,6 +311,7 @@ class HomepageController extends Controller
             'id_produk' => $id,
             'content' => $request->review
         ]);
+        
 
         return redirect()->action([HomepageController::class,'paymentpage'], ['id'=> $comment->id]);
         //return redirect('/dashboarduser');
